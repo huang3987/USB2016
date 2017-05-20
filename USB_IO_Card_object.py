@@ -66,6 +66,7 @@ class USB2016:
                 print "Get Usb Device List Success!"
                 if self.GetDeviceHandle():
                     print "Get Usb Device Handle Success!"
+                    self.GetAllPinInfo()
                 else:
                     print "Get Usb Device Handle Failed!"    
             else:
@@ -159,8 +160,10 @@ class USB2016:
     def WritePinValue(self, outputPinIndex = 0, pin_level = LOW_LEVEL):
         self.outputPinIndex = outputPinIndex
         self.pin_level = pin_level
+        
         if self.io_exist and self.list_exist and self.device_exist:
-            return_code = self.io.usb_io_write_output_pin_value(self.handle, outputPinIndex, pin_level)
+            if self.SetPinMode(pinIndex=outputPinIndex,pin_mode=OUTPUT_MODE):
+                return_code = self.io.usb_io_write_output_pin_value(self.handle, outputPinIndex, pin_level)
             if return_code == 0:
                 print "Write pin %s success, the value is %s" % (str(outputPinIndex), str(pin_level))
                 self.pin_info16_casted[outputPinIndex].pinValue = pin_level
@@ -214,7 +217,7 @@ if __name__ == "__main__":
     Usb.SetWorkLedMode()
     Usb.GetAllPinInfo()
         
-    Usb.SetPinMode(pin_mode = OUTPUT_MODE)
+    #Usb.SetPinMode(pin_mode = OUTPUT_MODE)
     Usb.WritePinValue()
     Usb.ReadPinValue()
 

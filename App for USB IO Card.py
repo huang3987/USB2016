@@ -20,6 +20,8 @@ Usb = USB2016()
 
 top = Tk()
 
+
+
 frame00 = Frame(top, width = 150, height = 450)
 frame00.grid(column = 0,row = 0)
 frame00_01 = Frame(frame00, width = 0, height = 300, bg = 'yellow')
@@ -41,22 +43,49 @@ def RefreshLed():
         LedLabel .config( image=LedGreen)
     else:
         LedLabel .config( image=LedGray)
+        
+def cleanUp():
+    Usb.CloseDevice()
+    Usb.FreeDeviceList()
+    Usb.UsbIoUninitial()
+    top.destroy()     
 
-ResetButton = Button(frame00_02, text = 'Reset')#,command = UsbIoDeviceOpen)
+WorkLed = 0
+def setWorkLed():
+    global WorkLed
+    if WorkLed == 0:
+        WorkLed = 1
+    else:
+        WorkLed = 0
+    Usb.SetWorkLedMode(WorkLed)
+    
+
+    
+ResetButton = Button(frame00_02, text = '状态指示灯',command = setWorkLed)#,command = UsbIoDeviceOpen)
 ResetButton.grid(column = 0, row = 0)
 ##EmptyLabel = Label(frame00_02, text = '   ')
 ##EmptyLabel.grid(column = 1, row = 0)
-RefreshButton = Button(frame00_02, text = 'Refresh', command = RefreshLed)
+RefreshButton = Button(frame00_02, text = '刷新', command = RefreshLed)
 RefreshButton.grid(column = 2, row = 0)
 
 ##EmptyLabel = Label(frame00_02, text = '   ')
 ##EmptyLabel.grid(column = 1, row = 1)
 
-Write0xFFButton = Button(frame00_02, text = 'Write0xFF')
+def write0xff():
+    for i in range(16):
+        Usb.WritePinValue(i,1)         
+
+
+Write0xFFButton = Button(frame00_02, text = '全高',command = write0xff)
 Write0xFFButton.grid(column = 0, row = 2)
 ##EmptyLabel = Label(frame00_02, text = '   ')
 ##EmptyLabel.grid(column = 1, row = 2)
-Write0x00Button = Button(frame00_02, text = 'Write0x00')
+
+def write0x00():
+    for i in range(16):
+        Usb.WritePinValue(i,0) 
+
+Write0x00Button = Button(frame00_02, text = '全低',command = write0x00)
 Write0x00Button.grid(column = 2, row = 2)
 
 ##EmptyLabel = Label(frame00_02, text = '   ')
@@ -71,9 +100,22 @@ TestButton.grid(column = 2, row = 4)
 
 
 Bit = {}
+BitVar = {}
+BitValueOld={}
+for i in range(16):
+    BitValueOld[i]=0
+    
+def checkButton():    
+    for i in range(16):
+        if BitVar[i].get()!=BitValueOld[i]:
+            Usb.WritePinValue(i,BitVar[i].get())
+            BitValueOld[i] = BitVar[i].get()
 
 for i in range(16):
-    Bit['Bit' + str(i)] = Checkbutton(frame00_03, text = 'Bit' + str(i))
+    BitVar[i] = IntVar()
+    BitVar[i].set(Usb.pin_info16_casted[i].pinValue)
+    BitValueOld[i] = BitVar[i].get()
+    Bit['Bit' + str(i)] = Checkbutton(frame00_03,variable = BitVar[i], text = 'Bit' + str(i), command = checkButton)
     Bit['Bit' + str(i)].grid(row = i%8, column = int(i/8))
 
 
@@ -90,5 +132,6 @@ top.title("X202测试程序")
 #top.minsize(400,400)
 
 #top.configure(bg = "green")
-
+RefreshLed()
+top.protocol("WM_DELETE_WINDOW",cleanUp)
 top.mainloop()
